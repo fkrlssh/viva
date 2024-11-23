@@ -1,74 +1,78 @@
 #include <stdio.h>
+#include <conio.h> 
 #include<string.h>
 #include "screen.h"
 #include "buffer.h"
+#include "cursor.h"
 
-#define MAX_LINES 100 // 최대 줄 수
+#define MAX_LINES 100
 
 int main() {
-    enable_ansi_support(); // ANSI 활성화
+    enable_ansi_support();
 
-    // 콘솔 크기 가져오기
     int rows, cols;
     get_console_size(&rows, &cols);
 
-    // 화면 초기화
     clear_screen();
 
-    // 제목 출력
     const char *title = "Visual Text editor -- version 0.0.1";
-    move_cursor(rows / 2, (cols - strlen(title)) / 2); // 화면 중앙
+    move_cursor(rows / 2, (cols - strlen(title)) / 2);
     printf("%s", title);
 
-    // 상태 바 출력
     set_reverse_video();
-    move_cursor(rows - 2, 0); // 하단 두 번째 줄
+    move_cursor(rows - 2, 0);
     printf("[No Name] - 0 lines");
     reset_video();
 
-    // 도움말 바 출력
-    move_cursor(rows - 1, 0); // 맨 마지막 줄
+    move_cursor(rows - 1, 0);
     printf("HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
 
-    // 갭 버퍼 초기화
     GapBuffer *gb = init_gap_buffer(100);
+    CursorState cursor;
+    init_cursor(&cursor, rows, cols);
 
-    // 입력 처리 변수
-    char c;
-    int current_line = 1;      // 현재 줄 번호
-    int cursor_position = 0;   // 현재 줄에서의 커서 위치
-
-    move_cursor(current_line, 1); // 첫 번째 줄로 커서 이동
+    int c;
+    update_cursor(&cursor);
 
     while (1) {
-        c = getchar(); // 사용자 입력 받기
+        c = _getch(); // 키 입력 받기 (Windows 전용)
 
         if (c == 17) { // Ctrl-Q로 종료
             break;
-        } else if (c == '\b') { // 백스페이스로 삭제
-            if (cursor_position > 0) {
+        } else if (c == '\b') { // Backspace
+            if (cursor.cursor_position > 0) {
                 delete_char(gb);
-                cursor_position--;
-                move_cursor(current_line, cursor_position + 1); // 커서를 현재 위치로 이동
-                printf(" "); // 이전 문자를 지움
-                move_cursor(current_line, cursor_position + 1); // 커서를 다시 복원
+                cursor.cursor_position--;
+                update_cursor(&cursor);
+                printf(" ");
+                update_cursor(&cursor);
             }
-        } else if (c == '\n') { // 엔터 키로 줄 변경
-            if (current_line < MAX_LINES && current_line < rows - 2) {
-                current_line++;        // 줄 번호 증가
-                cursor_position = 0;   // 줄 시작으로 커서 이동
-                move_cursor(current_line, 1); // 다음 줄로 커서 이동
+        } else if (c == '\r') { // Enter
+            if (cursor.current_line < MAX_LINES && cursor.current_line < rows - 2) {
+                cursor.current_line++;
+                cursor.cursor_position = 0;
+                update_cursor(&cursor);
             }
+        } else if (c == 224) { // 특수 키 처리 (화살표 등)
+            c = _getch(); // 두 번째 키 코드 읽기
+            if (c == 72) { // ↑ 위쪽 화살표
+                handle_arrow_key(&cursor, 'A');
+            } else if (c == 80) { // ↓ 아래쪽 화살표
+                handle_arrow_key(&cursor, 'B');
+            } else if (c == 75) { // ← 왼쪽 화살표
+                handle_arrow_key(&cursor, 'D');
+            } else if (c == 77) { // → 오른쪽 화살표
+                handle_arrow_key(&cursor, 'C');
+            }
+            update_cursor(&cursor);
         } else {
-            insert_char(gb, c);        // 문자 삽입
-            move_cursor(current_line, cursor_position + 1); // 커서를 현재 위치로 이동
-            printf("%c", c);           // 입력 문자 출력
-            cursor_position++;
+            insert_char(gb, c);
+            printf("%c", c);
+            cursor.cursor_position++;
+            update_cursor(&cursor);
         }
     }
 
-    // 갭 버퍼 해제
     free_gap_buffer(gb);
-
     return 0;
 }
