@@ -1,13 +1,21 @@
 #include <stdio.h>
-#include <conio.h> 
-#include<string.h>
+#include <string.h>
+#include <conio.h>  // Windows 키 입력 처리
 #include "screen.h"
-#include "buffer.h"
+#include "data.h"
 #include "cursor.h"
 
 #define MAX_LINES 100
 
-int main() {
+void prompt_file_name(char *file_name) {
+    move_cursor(25, 0); // 메시지 표시 위치
+    printf("Enter file name: ");
+    fgets(file_name, 256, stdin);
+    file_name[strcspn(file_name, "\n")] = '\0'; // 줄 바꿈 제거
+    clear_screen();
+}
+
+int main(int argc, char *argv[]) {
     enable_ansi_support();
 
     int rows, cols;
@@ -31,15 +39,22 @@ int main() {
     CursorState cursor;
     init_cursor(&cursor, rows, cols);
 
-    int c;
+    char c;
+    char file_name[256] = "[No Name]";
     update_cursor(&cursor);
 
+    // 초기 파일 로드 또는 새 파일 생성
+    if (argc > 1) {
+        load_buffer_from_file(argv[1], gb);
+        strcpy(file_name, argv[1]);
+    }
+
     while (1) {
-        c = _getch(); // 키 입력 받기 (Windows 전용)
+        c = _getch();
 
         if (c == 17) { // Ctrl-Q로 종료
             break;
-        } else if (c == '\b') { // Backspace
+        } else if (c == '\b') {
             if (cursor.cursor_position > 0) {
                 delete_char(gb);
                 cursor.cursor_position--;
@@ -47,24 +62,23 @@ int main() {
                 printf(" ");
                 update_cursor(&cursor);
             }
-        } else if (c == '\r') { // Enter
-            if (cursor.current_line < MAX_LINES && cursor.current_line < rows - 2) {
-                cursor.current_line++;
-                cursor.cursor_position = 0;
-                update_cursor(&cursor);
-            }
-        } else if (c == 224) { // 특수 키 처리 (화살표 등)
-            c = _getch(); // 두 번째 키 코드 읽기
-            if (c == 72) { // ↑ 위쪽 화살표
-                handle_arrow_key(&cursor, 'A');
-            } else if (c == 80) { // ↓ 아래쪽 화살표
-                handle_arrow_key(&cursor, 'B');
-            } else if (c == 75) { // ← 왼쪽 화살표
-                handle_arrow_key(&cursor, 'D');
-            } else if (c == 77) { // → 오른쪽 화살표
-                handle_arrow_key(&cursor, 'C');
-            }
+        } else if (c == '\r') {
+            cursor.current_line++;
+            cursor.cursor_position = 0;
             update_cursor(&cursor);
+        } else if (c == 224) {
+            c = _getch();
+            if (c == 72) handle_arrow_key(&cursor, 'A'); // ↑
+            if (c == 80) handle_arrow_key(&cursor, 'B'); // ↓
+            if (c == 75) handle_arrow_key(&cursor, 'D'); // ←
+            if (c == 77) handle_arrow_key(&cursor, 'C'); // →
+            update_cursor(&cursor);
+        } else if (c == 19) { // Ctrl-S: 저장
+            if (strcmp(file_name, "[No Name]") == 0) {
+                // 파일 이름이 없으면 사용자에게 요청
+                prompt_file_name(file_name);
+            }
+            save_buffer_to_file(file_name, gb);
         } else {
             insert_char(gb, c);
             printf("%c", c);
