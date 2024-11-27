@@ -1,7 +1,7 @@
 # 컴파일러와 플래그 설정
 CC = gcc
 CFLAGS = -Wall -g
-TARGET = viva.exe
+TARGET = viva
 
 # 오브젝트 파일
 OBJS = viva.o editor.o buffer.o screen.o cursor.o data.o
@@ -34,5 +34,8 @@ data.o: data.c data.h buffer.h
 
 # 정리 규칙
 clean:
-	@if exist *.o del /f *.o
-	@if exist $(TARGET) del /f $(TARGET)
+ifeq ($(OS),Windows_NT)
+	del /f /q *.o $(TARGET).exe
+else
+	rm -f *.o $(TARGET)
+endif
