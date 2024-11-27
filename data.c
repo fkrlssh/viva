@@ -1,8 +1,8 @@
 #include <stdio.h>
-#include <string.h>
+#include <stdlib.h>
 #include "data.h"
+#include "buffer.h"
 
-// 버퍼 내용을 파일에 저장
 void save_buffer_to_file(const char *file_name, GapBuffer *gb) {
     FILE *file = fopen(file_name, "w");
     if (!file) {
@@ -10,16 +10,17 @@ void save_buffer_to_file(const char *file_name, GapBuffer *gb) {
         return;
     }
 
-    for (int i = 0; i < gb->buffer_size; i++) {
-        if (i < gb->gap_start || i >= gb->gap_end) {
-            fputc(gb->buffer[i], file);
-        }
+    for (int i = 0; i < gb->gap_start; i++) {
+        fputc(gb->buffer[i], file);
     }
+    for (int i = gb->gap_end; i < gb->buffer_size; i++) {
+        fputc(gb->buffer[i], file);
+    }
+
     fclose(file);
     printf("File saved: %s\n", file_name);
 }
 
-// 버퍼 내용을 파일에서 로드
 void load_buffer_from_file(const char *file_name, GapBuffer *gb) {
     FILE *file = fopen(file_name, "r");
     if (!file) {
@@ -27,12 +28,11 @@ void load_buffer_from_file(const char *file_name, GapBuffer *gb) {
         return;
     }
 
-    char line[256];
-    while (fgets(line, sizeof(line), file)) {
-        for (int i = 0; line[i] != '\0'; i++) {
-            insert_char(gb, line[i]);
-        }
+    char ch;
+    while ((ch = fgetc(file)) != EOF) {
+        insert_char(gb, ch);
     }
+
     fclose(file);
     printf("File loaded: %s\n", file_name);
 }
