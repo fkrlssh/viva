@@ -1,30 +1,25 @@
 #include <stdio.h>
+#include <string.h>
 #ifdef _WIN32
-#include <conio.h> // Windows 키 입력 처리
+    #include <conio.h>
 #else
-#include <termios.h>
-#include <unistd.h>
+    #include <termios.h>
+    #include <unistd.h>
+
+    int getch(void) {
+        struct termios oldt, newt;
+        int ch;
+        tcgetattr(STDIN_FILENO, &oldt);
+        newt = oldt;
+        newt.c_lflag &= ~(ICANON | ECHO);
+        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+        ch = getchar();
+        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+        return ch;
+    }
 #endif
 #include "editor.h"
 #include "screen.h"
-
-#ifdef _WIN32
-char get_input() {
-    return _getch();
-}
-#else
-char get_input() {
-    struct termios oldt, newt;
-    char ch;
-    tcgetattr(STDIN_FILENO, &oldt);            // 현재 터미널 설정 읽기
-    newt = oldt;
-    newt.c_lflag &= ~(ICANON | ECHO);          // CANONICAL 모드 및 ECHO 끄기
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);   // 새 설정 적용
-    ch = getchar();
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);   // 원래 설정 복구
-    return ch;
-}
-#endif
 
 int main(int argc, char *argv[]) {
     Editor editor;
@@ -35,7 +30,13 @@ int main(int argc, char *argv[]) {
     }
 
     while (1) {
-        char c = get_input();
+        int c;
+        #ifdef _WIN32
+            c = _getch(); 
+        #else
+            c = getch(); 
+        #endif
+
         if (process_input(&editor, c)) break;
     }
 

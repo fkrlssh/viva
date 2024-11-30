@@ -9,7 +9,7 @@ typedef struct {
 } CursorState;
 
 void init_cursor(CursorState *cursor, int max_lines, int max_cols);
-void handle_arrow_key(CursorState *cursor, char direction, int max_lines);
+void handle_arrow_key(CursorState *cursor, char direction);
 void update_cursor(CursorState *cursor);
 
 #endif // CURSOR_H

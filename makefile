@@ -17,7 +17,7 @@ $(TARGET): $(OBJS)
 viva.o: viva.c editor.h
 	$(CC) $(CFLAGS) -c viva.c
 
-editor.o: editor.c editor.h buffer.h cursor.h data.h
+editor.o: editor.c editor.h buffer.h cursor.h data.h screen.h
 	$(CC) $(CFLAGS) -c editor.c
 
 buffer.o: buffer.c buffer.h

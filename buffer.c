@@ -5,11 +5,23 @@
 
 GapBuffer *init_gap_buffer(int size) {
     GapBuffer *gb = malloc(sizeof(GapBuffer));
+    if (gb == NULL) {
+        fprintf(stderr, "Memory allocation failed for GapBuffer structure.\n");
+        exit(EXIT_FAILURE);
+    }
+
     gb->buffer = malloc(size * sizeof(char));
+    if (gb->buffer == NULL) {
+        fprintf(stderr, "Memory allocation failed for buffer.\n");
+        free(gb);
+        exit(EXIT_FAILURE);
+    }
+
     gb->buffer_size = size;
     gb->gap_start = 0;
     gb->gap_end = size - 1;
     memset(gb->buffer, 0, size);
+
     return gb;
 }
 
@@ -17,6 +29,11 @@ void insert_char(GapBuffer *gb, char c) {
     if (gb->gap_start == gb->gap_end) {
         int new_size = gb->buffer_size * 2;
         char *new_buffer = malloc(new_size * sizeof(char));
+        if (new_buffer == NULL) {
+            fprintf(stderr, "Memory allocation failed during buffer resizing.\n");
+            exit(EXIT_FAILURE);
+        }
+
         int new_gap_end = new_size - (gb->buffer_size - gb->gap_end);
 
         memcpy(new_buffer, gb->buffer, gb->gap_start);
@@ -38,6 +55,8 @@ void delete_char(GapBuffer *gb) {
 }
 
 void free_gap_buffer(GapBuffer *gb) {
-    free(gb->buffer);
+    if (gb->buffer) {
+        free(gb->buffer);
+    }
     free(gb);
 }
